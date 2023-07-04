@@ -12,6 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name="usuarios")
 public class Usuario {
@@ -23,12 +25,14 @@ public class Usuario {
 	private String username;
 	private String nombre;
 	private String apellido;
+	private String password;
 	private String email;
 	private String telefono;
 	private Boolean enabled=true;
 	private String perfil;
 	
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER,mappedBy = "usuario")
+	@JsonIgnore
 	private Set<UsuarioRol> usuarioRoles =new HashSet<>();
 	
 	
@@ -36,6 +40,19 @@ public class Usuario {
 	public Usuario() {
 		super();
 	}
+	
+	public Usuario(Long id, String username, String password, String nombre, String apellido, String email, String telefono, boolean enabled, String perfil) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.email = email;
+        this.telefono = telefono;
+        this.enabled = enabled;
+        this.perfil = perfil;
+    }
+	
 
 	public Long getId() {
 		return id;
@@ -60,6 +77,14 @@ public class Usuario {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
+	
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
 
 	public String getApellido() {
 		return apellido;
@@ -68,6 +93,9 @@ public class Usuario {
 	public void setApellido(String apellido) {
 		this.apellido = apellido;
 	}
+
+	
+	
 
 	public String getEmail() {
 		return email;
