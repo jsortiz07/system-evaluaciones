@@ -16,14 +16,11 @@ public class UsuarioRol {
 	@ManyToOne(fetch = FetchType.EAGER)
 	private Usuario usuario;
 	
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne
 	private Rol rol;
 	
 	
 
-	public UsuarioRol() {
-		super();
-	}
 
 	public Long getUsuarioRolId() {
 		return usuarioRolId;

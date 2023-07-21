@@ -4,7 +4,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -14,47 +16,42 @@ import io.jsonwebtoken.SignatureAlgorithm;
 @Component
 public class JwtUtils {
 
-	
-	private String secret = "portalrev";
+	private String SECRET_KEY = "examportal";
 
-	// 7. validate token user name and request user also expDate
-	public boolean validateToken(String token, String username) {
-		String usernameInToken = getUsername(token);
-		return (usernameInToken.equals(username) && !isTokenExpired(token));
-	}
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
 
-	// 6. Check Current and Exp Date
-	private boolean isTokenExpired(String token) {
-		final Date expiration = getExpDate(token);
-		return expiration.before(new Date());
-	}
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
 
-	// 5. Generate Token with Empty Claims
-	public String generateToken(String username) {
-		Map<String, Object> claims = new HashMap<>();
-		return generateToken(claims, username);
-	}
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+    }
 
-	// 4.Read username
-	public String getUsername(String token) {
-		return getClaims(token).getSubject();
-	}
+    private Boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
 
-	// 3. read ExpDate
-	public Date getExpDate(String token) {
-		return getClaims(token).getExpiration();
-	}
+    public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, userDetails.getUsername());
+    }
 
-	// 2. Read Claim
-	private Claims getClaims(String token) {
-		return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
-	}
+    private String createToken(Map<String, Object> claims, String subject) {
 
-	// 1. generate token
-	private String generateToken(Map<String, Object> claims, String subject) {
-		return Jwts.builder().setClaims(claims).setSubject(subject).setIssuer("TechLeads IT")
-				.setIssuedAt(new Date(System.currentTimeMillis()))
-				.setExpiration(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(30)))
-				.signWith(SignatureAlgorithm.HS512, secret).compact();
-	}
+        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .signWith(SignatureAlgorithm.HS256, SECRET_KEY).compact();
+    }
+
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
 }
